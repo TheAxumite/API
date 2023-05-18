@@ -1,6 +1,6 @@
-from rest_framework import APIView  
+from rest_framework.views import APIView  
 from rest_framework.response import Response
-from .models import Book
+from .models import *
 from .serializers import BookSerializer
 
 class BookList(APIView):

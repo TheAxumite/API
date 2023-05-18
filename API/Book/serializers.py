@@ -1,7 +1,7 @@
-from django.core  import serializers
+from rest_framework.serializers import ModelSerializer
 from .models import Book
 
-class BookSerializer(serializers.ModelSerializer):
+class BookSerializer(ModelSerializer):
     class Meta:
         model = Book
         fields = ['id', 'title', 'author', 'publication_date']
