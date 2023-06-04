@@ -1,28 +1,59 @@
-from django.http import HttpResponse
-from channels.generic.websocket import AsyncWebsocketConsumer
-from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
-from .views import socket_view
+import time
+import sys
+import json
+from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
-# Websocket consumer to handle the socket connection
-# In your Django Channels routing configuration, you would route the websocket connection to this consumer
+counter = 0
+average = 0
+list = 0
 
+class SocketConsumer(AsyncJsonWebsocketConsumer):
+   
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.data_size = 0
+        self.elapsed_time=0
+        self.last_time = time.time()
 
-class SocketConsumer(AsyncWebsocketConsumer):
+    
+
     async def connect(self):
         await self.accept()
-
-    async def receive(self, text_data):
-        # Process the received data here
-        print(text_data)
 
     async def disconnect(self, close_code):
         pass
 
-    def send_to_view(self, event):
-        # Send the received data to the socket_view
-        request = type('Request', (object,), {'body': event['data'].encode('utf-8')})
-        response = socket_view(request)
+    async def receive(self, text_data):
+        print(self.elapsed_time)
+        current_time = time.time()
+        self.elapsed_time = self.elapsed_time + current_time - self.last_time
 
-        # Send the response back to the consumer
-        self.send(text_data=response.content.decode('utf-8'))
+        
+        global counter
+        global average
+        global list
+
+
+        content = json.loads(text_data)
+        self.data_size += sys.getsizeof(content) / 1024  # Convert to KB
+
+        counter += 1
+
+        packet_size = sys.getsizeof(text_data) / 1024  # Size in KB
+        list += packet_size
+        average = list / counter
+
+        # If one second has passed, calculate and print data rate
+        if self.elapsed_time >= 1:
+            data_rate = self.data_size / self.elapsed_time  # KB/s
+            print(f"KB Transmitted per second: {data_rate}")
+            self.data_size = 0
+            self.last_time = current_time
+     
+        print(self.elapsed_time)
+        print(content[0]['Frame'])
+        print(f"Packet Size: {packet_size}")
+        print(f"Average KB per transaction: {average}")
+  
+        response_content = {'message': f"Received Frame {content[0]['Frame']}"}
+        await self.send_json(content=response_content)
