@@ -7,15 +7,14 @@ counter = 0
 average = 0
 list = 0
 
+
 class SocketConsumer(AsyncJsonWebsocketConsumer):
-   
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.data_size = 0
-        self.elapsed_time=0
+        self.elapsed_time = 0
         self.last_time = time.time()
-
-    
 
     async def connect(self):
         await self.accept()
@@ -28,11 +27,9 @@ class SocketConsumer(AsyncJsonWebsocketConsumer):
         current_time = time.time()
         self.elapsed_time = self.elapsed_time + current_time - self.last_time
 
-        
         global counter
         global average
         global list
-
 
         content = json.loads(text_data)
         self.data_size += sys.getsizeof(content) / 1024  # Convert to KB
@@ -49,11 +46,11 @@ class SocketConsumer(AsyncJsonWebsocketConsumer):
             print(f"KB Transmitted per second: {data_rate}")
             self.data_size = 0
             self.last_time = current_time
-     
+
         print(self.elapsed_time)
         print(content[0]['Frame'])
         print(f"Packet Size: {packet_size}")
         print(f"Average KB per transaction: {average}")
-  
+
         response_content = {'message': f"Received Frame {content[0]['Frame']}"}
         await self.send_json(content=response_content)
